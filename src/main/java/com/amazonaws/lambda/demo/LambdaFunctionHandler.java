@@ -88,13 +88,14 @@ public class LambdaFunctionHandler implements RequestHandler<Request, Object> {
             break;
         case "POST":
             try {
+            	String bucketName = request.getBucketName() != null ? Constants.bucketNameResource : Constants.bucketName;
                 for (FileRequestBody file : request.getRequestBody()) {
                     File archivo = archivoFromBase64(file);
                     Map<String, String> metadata = new HashMap<>();
                     // metadata.put("Content-Type", file.getTipo());
                     metadata.put("Content-length", String.valueOf(archivo.length()));
                     InputStream is = new FileInputStream(archivo);
-                    upload(Constants.bucketName, file.getIdFile().concat(getExtension(file.getNombreArchivo())), Optional.of(metadata), is, file);
+                    upload(bucketName, file.getIdFile().concat(getExtension(file.getNombreArchivo())), Optional.of(metadata), is, file);
                     archivo.delete();
                 }
                 return true;

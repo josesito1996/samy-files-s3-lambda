@@ -26,4 +26,6 @@ public class Request {
     private String fileName;
     
     private List<FileRequestBody> requestBody;
+    
+    private String bucketName;
 }
