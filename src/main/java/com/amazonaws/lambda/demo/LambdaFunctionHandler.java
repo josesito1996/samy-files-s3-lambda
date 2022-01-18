@@ -76,7 +76,7 @@ public class LambdaFunctionHandler implements RequestHandler<Request, Object> {
         switch (request.getHttpMethod()) {
         case "GET":
             try {
-            	String bucketName = request.getBucketName() != null ? Constants.bucketNameResource : Constants.bucketName;
+            	String bucketName = request.getBucketName() != "" ? Constants.bucketNameResource : Constants.bucketName;
                 S3Object object = s3Client.getObject(bucketName, request.getIdFile());
                 S3ObjectInputStream objectInputStream = object.getObjectContent();
                 return "data:".concat(request.getType()).concat(";base64,")
