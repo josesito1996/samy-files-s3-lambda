@@ -89,7 +89,7 @@ public class LambdaFunctionHandler implements RequestHandler<Request, Object> {
             break;
         case "POST":
             try {
-            	String bucketName = request.getBucketName() != null ? Constants.bucketNameResource : Constants.bucketName;
+            	String bucketName = request.getBucketName() != "" ? Constants.bucketNameResource : Constants.bucketName;
                 for (FileRequestBody file : request.getRequestBody()) {
                     File archivo = archivoFromBase64(file);
                     Map<String, String> metadata = new HashMap<>();
