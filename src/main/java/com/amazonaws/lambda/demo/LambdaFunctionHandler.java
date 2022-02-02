@@ -89,6 +89,7 @@ public class LambdaFunctionHandler implements RequestHandler<Request, Object> {
             break;
         case "POST":
             try {
+            	context.getLogger().log("Request " + request.toString());
             	String bucketName = request.getBucketName() != "" ? Constants.bucketNameResource : Constants.bucketName;
                 for (FileRequestBody file : request.getRequestBody()) {
                     File archivo = archivoFromBase64(file);
