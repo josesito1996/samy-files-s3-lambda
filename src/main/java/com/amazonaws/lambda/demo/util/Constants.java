@@ -13,5 +13,7 @@ public class Constants {
     public static String bucketName = "archivos-samy-v1";
     
     public static String bucketNameResource = "recursos-sami";
+    
+    public static String bucketNameContracts = "contratos-samy";
 
 }
