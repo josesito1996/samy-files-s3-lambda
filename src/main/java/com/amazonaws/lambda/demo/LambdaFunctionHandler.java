@@ -23,9 +23,11 @@ import com.amazonaws.lambda.demo.model.Archivo;
 import com.amazonaws.lambda.demo.model.FileRequestBody;
 import com.amazonaws.lambda.demo.model.Request;
 import com.amazonaws.lambda.demo.util.Constants;
+import com.amazonaws.lambda.demo.util.TableNameResolver;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.s3.AmazonS3;
@@ -44,6 +46,11 @@ public class LambdaFunctionHandler implements RequestHandler<Request, Object> {
 
 	private AmazonS3 s3Client = s3Client();
 	private AmazonDynamoDB dynamoDb = amazonDynamoDB();
+	private String enviroment = System.getenv("ENV");
+
+	private String getEnviroment() {
+		return enviroment.equals("dev") ? "" : "-".concat(enviroment);
+	}
 
 	public AmazonS3 s3Client() {
 		AWSCredentials credentials = new BasicAWSCredentials(Constants.accessKey, Constants.secretKey);
@@ -65,14 +72,22 @@ public class LambdaFunctionHandler implements RequestHandler<Request, Object> {
 				.withCredentials(awsCredentialsProvider()).build();
 	}
 
+	public DynamoDBMapper dynamoDBMapper(AmazonDynamoDB amazonDynamoDB) {
+		DynamoDBMapper mapper = new DynamoDBMapper(amazonDynamoDB,
+				new DynamoDBMapperConfig.Builder().withTableNameResolver(new TableNameResolver(enviroment)).build());
+		return mapper;
+	}
+
 	@SuppressWarnings("restriction")
 	@Override
 	public Object handleRequest(Request request, Context context) {
+		context.getLogger().log("Enviroment : " + enviroment);
 		switch (request.getHttpMethod()) {
 		case "GET":
 			try {
 				context.getLogger().log("Request " + request.toString());
-				S3Object object = s3Client.getObject(request.getBucketName(), request.getIdFile());
+				S3Object object = s3Client.getObject(request.getBucketName().concat(getEnviroment()),
+						request.getIdFile());
 				S3ObjectInputStream objectInputStream = object.getObjectContent();
 				return "data:".concat(request.getType()).concat(";base64,")
 						.concat(new sun.misc.BASE64Encoder().encode(IOUtils.toByteArray(objectInputStream)))
@@ -90,7 +105,7 @@ public class LambdaFunctionHandler implements RequestHandler<Request, Object> {
 					// metadata.put("Content-Type", file.getTipo());
 					metadata.put("Content-length", String.valueOf(archivo.length()));
 					InputStream is = new FileInputStream(archivo);
-					upload(request.getBucketName(), file.getIdFile().concat(getExtension(file.getNombreArchivo())),
+					upload(request.getBucketName().concat(getEnviroment()), file.getIdFile().concat(getExtension(file.getNombreArchivo())),
 							Optional.of(metadata), is, file);
 					archivo.delete();
 				}
@@ -107,7 +122,7 @@ public class LambdaFunctionHandler implements RequestHandler<Request, Object> {
 
 	private Archivo persistData(FileRequestBody fileRequestBody, boolean estado) {
 		try {
-			DynamoDBMapper mapper = new DynamoDBMapper(this.dynamoDb);
+			DynamoDBMapper mapper = dynamoDBMapper(this.dynamoDb);
 			Archivo archivo = Archivo.builder().nombreArchivo(fileRequestBody.getNombreArchivo())
 					.fechaRegistro(fechaFormateada(LocalDateTime.now())).estaCargado(estado).build();
 			mapper.save(archivo);
